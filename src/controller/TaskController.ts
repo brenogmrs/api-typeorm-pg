@@ -2,25 +2,71 @@ import {getRepository} from "typeorm";
 import {NextFunction, Request, Response} from "express";
 import {Tasks} from "../entity/Tasks";
 
-export class TasksController {
+export const getTasks = async (req: Request, res: Response) => {
 
-    private userRepository = getRepository(Tasks);
+    const tasks = await getRepository(Tasks).find();
+    return res.json(tasks);
+};
 
-    async all(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.find();
+export const getTask = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+
+    const task = await getRepository(Tasks).findOne(id);
+
+    return res.json(task);
+};
+
+
+export const saveTask = async (req: Request, res: Response) => {
+    const task = req.body;
+
+    const tasks = await getRepository(Tasks).save(task);
+    return res.json(tasks);
+};
+
+export const deleteTask = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const task = await getRepository(Tasks).delete(id);
+
+    if(task.affected === 1){
+        const taskUpdated = await getRepository(Tasks).findOne(id);
+        return res.json({message: "Tarefa deletada"});
     }
 
-    async one(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.findOne(request.params.id);
+    return res.status(404).json({message: "Tarefa não encontrada"});
+
+};
+
+export const updateTask = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const taskInfo = req.body;
+
+    const task = await getRepository(Tasks).update(id, taskInfo);
+    
+    if(task.affected === 1){
+        const taskUpdated = await getRepository(Tasks).findOne(id);
+        return res.json(taskUpdated);
     }
 
-    async save(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.save(request.body);
+    return res.status(404).json({message: "Tarefa não encontrada"});
+};
+
+
+
+export const finishTask = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const taskInfo = req.body;
+
+    const task = await getRepository(Tasks).update(id, {
+        finished: true
+    });
+    
+    if(task.affected === 1){
+        const taskUpdated = await getRepository(Tasks).findOne(id);
+        return res.json({message: "Tarefa finalizada"});
     }
 
-    async remove(request: Request, response: Response, next: NextFunction) {
-        let userToRemove = await this.userRepository.findOne(request.params.id);
-        await this.userRepository.remove(userToRemove);
-    }
-
-}
+    return res.status(404).json({message: "Tarefa não encontrada"});
+};
